@@ -12,7 +12,12 @@ export class BotClient {
     handleMessage(bot: Telegraf) {
         let routing = new Routes();
         bot.on("text", (ctx) => {
-            routing.getHandler(String(ctx.message.text))(ctx)
+            let command = ctx.message.text;
+            let params;
+            if (routing.shouldContainParams(command)) {
+                [command, params] = ctx.message.text.split(' ');
+            }
+            routing.getHandler(String(command))(ctx, params)
         })
     }
 }
