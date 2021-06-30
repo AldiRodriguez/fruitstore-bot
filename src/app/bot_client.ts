@@ -24,11 +24,10 @@ export class BotClient {
     handleMessage(bot: Telegraf) {
         let routing = new Routes();
         bot.on("text", (ctx) => {
-            let command;
+            let command = ctx.message.text;
             let params;
-            let message = ctx.message.text;
-            if (routing.shouldContainParams(message)) {
-                [command, params] = this.parseMessage(message)
+            if (routing.shouldContainParams(command)) {
+                [command, params] = this.parseMessage(ctx.message.text)
             }
             routing.getHandler(String(command))(ctx, params)
         })
