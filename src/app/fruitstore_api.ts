@@ -1,71 +1,66 @@
+const axios = require('axios')
+
 export interface IProduct {
     id: number,
-    name: string,
-    description: string,
-    price: number
+    nombre: string,
+    descripcion: string,
+    precio: number
 }
 
 export interface IOrderInfo {
     totalPrice: number,
     orderId: number
 }
+export interface Order {
+    id: number,
+    precio: number
+    us_telegram: string,
+    estado: string,
+    productos: Array<IProduct>,
+    direccion: string
+}
+
+interface IProductRequest {
+    producto_id: number,
+    cantidad: number
+}
+
 export class FruitStoreApi {
 
-    private products = [
-        {
-            "id": 123,
-            "name": "Bolson Verduras",
-            "description": "5kg de verduras de estación",
-            "price": 400
-        },
-        {
-            "id": 879,
-            "name": "Bolson Frutas",
-            "description": "5kg de frutas de estación",
-            "price": 400
-        },
-        {
-            "id": 123879,
-            "name": "Bolson Mix",
-            "description": "8kg de frutas y verduras de estación",
-            "price": 600
-        },
-        {
-            "id": 1,
-            "name": "Bandeja de champiñones",
-            "description": "250gr de champiñones",
-            "price": 250
-        },
-        {
-            "id": 2,
-            "name": "Bandeja de frutillas",
-            "description": "250gr de frutillas",
-            "price": 200
-        },
-        {
-            "id": 3,
-            "name": "Palta",
-            "description": "Palta hass por unidad",
-            "price": 100
-        }
-    ]
+    private apiUrl:string;
 
-    getProducts(): Array<IProduct> {
-        return this.products;
+    constructor() {
+        this.apiUrl = String(process.env.BASE_API_URL);
     }
 
-    sendOrder(products: Array<string>) {
-        var totalPrice:number = 0;
-        console.log(products);
+    async getProducts(): Promise<IProduct[]> {
+        const response = await axios.get(`${this.apiUrl}/producto`)
+        const products:Array<IProduct> = await response.data
+        return products;
+    }
+
+    async sendOrder(products: Array<string>, telegramUser:string) {
+        var productsRequest: Array<IProductRequest> = new Array();
+
         products.forEach( element => {
-            let price = this.products.filter(product => product.id == Number(element)).map(element => element.price).pop() || 0
-            totalPrice += price;
+            let [id,qty] = element.split('-');
+            productsRequest.push({"producto_id": Number(id), "cantidad": Number(qty)})
         })
-
-        return {"totalPrice": totalPrice, "orderId": Date.now()}
+        var request = {"productos": productsRequest, "us_telegram": telegramUser, "estado": "En progreso"}
+        const response = await axios.post(`${this.apiUrl}/pedido`, request)
+        const order:Order = await response.data
+        return {"totalPrice": order.precio, "orderId": order.id}
     }
 
-    getStatus(orderId: string) {
-        return "En preparación";
+    async getStatus(orderId: string): Promise<Order> {
+        const response = await axios.get(`${this.apiUrl}/pedido/${orderId}`)
+        const order: Order = await response.data
+        return order;
+    }
+
+    async setAddress(telegramUser: string, address: string): Promise<Order> {
+        const response = await axios.put(`${this.apiUrl}/pedido/telegram/${telegramUser}`, {"direccion": address})
+        const updatedOrder: Order = await response.data;
+        return updatedOrder;
     }
 }

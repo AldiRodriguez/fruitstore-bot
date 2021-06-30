@@ -1,8 +1,9 @@
-import { buildStartMessage, buildProductListMessage, buildOrderMessage,  buildDefaultMessage, buildOrderStatusMessage} from '../utils/parser';
-import { FruitStoreApi } from './fruitstore_api'
+import { Context } from 'telegraf';
+import { MessageParser } from '../utils/parser';
+import { FruitStoreApi, Order } from './fruitstore_api'
 
 export class Routes {
-    public fruitStoreApi: FruitStoreApi;
+    private fruitStoreApi: FruitStoreApi;
 
     constructor() {
         this.fruitStoreApi = new FruitStoreApi();
@@ -12,7 +13,8 @@ export class Routes {
         "/start": this.start.bind(this),
         "/productos": this.products.bind(this),
         "/pedir": this.order.bind(this),
-        "/estado": this.status.bind(this)
+        "/estado": this.status.bind(this),
+        "/direccion": this.address.bind(this)
     }
 
     getHandler(message: string) {
@@ -20,35 +22,41 @@ export class Routes {
     }
 
     shouldContainParams(command: string) {
-        return command.match('pedir') || command.match('estado')
+        return command.match('pedir') || command.match('estado') || command.match('direccion')
     }
 
     start(ctx:any, params: Array<string>) {
         let name = ctx.from?.first_name || ctx.from?.username;
-        let message = buildStartMessage(name);
+        let message = MessageParser.buildStartMessage(name);
         ctx.telegram.sendMessage(ctx.message.chat.id, message);
     }
 
-    products(ctx:any, params: Array<number>) {
-        var products = this.fruitStoreApi.getProducts()
-        var message = buildProductListMessage(products)
+    async products(ctx:any, params: Array<number>) {
+        var products = await this.fruitStoreApi.getProducts()
+        var message = MessageParser.buildProductListMessage(products)
         ctx.telegram.sendMessage(ctx.message.chat.id, message, {parse_mode: 'markdown'});
     }
 
-    order(ctx:any, params: string) {
-        let orderInfo = this.fruitStoreApi.sendOrder(params.split(','));
-        let message = buildOrderMessage(orderInfo)
-        ctx.telegram.sendMessage(ctx.message.chat.id, message, {parse_mode: 'markdown'});
+    async order(ctx:any, params: string) {
+        let orderInfo = await this.fruitStoreApi.sendOrder(params.split(','), ctx.from.username);
+        let message = MessageParser.buildOrderMessage(orderInfo)
+        ctx.telegram.sendMessage(String(ctx.chat?.id), message, {parse_mode: 'markdown'});
     }
 
     defaultMessage(ctx: any) {
-        let message = buildDefaultMessage(ctx.message.text);
+        let message = MessageParser.buildDefaultMessage(ctx.message.text);
         ctx.telegram.sendMessage(ctx.message.chat.id, message)
     }
 
-    status(ctx: any, orderId: string){
-        let status = this.fruitStoreApi.getStatus(orderId);
-        let message = buildOrderStatusMessage(status);
+    async status(ctx: any, orderId: string) {
+        let order: Order = await this.fruitStoreApi.getStatus(orderId);
+        let message = MessageParser.buildOrderStatusMessage(order.estado);
+        ctx.telegram.sendMessage(ctx.message.chat.id, message)
+    }
+
+    async address(ctx: any, address: string) {
+        let updatedOrder: Order = await this.fruitStoreApi.setAddress(ctx.from.username, address);
+        let message = MessageParser.buildAddressMessage(updatedOrder.id, updatedOrder.direccion)
         ctx.telegram.sendMessage(ctx.message.chat.id, message)
     }
 }
