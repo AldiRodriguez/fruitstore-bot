@@ -1,6 +1,6 @@
-import { Context } from 'telegraf';
 import { MessageParser } from '../utils/parser';
-import { FruitStoreApi, Order } from './fruitstore_api'
+import { FruitStoreApi } from './fruitstore_api';
+import {Pedido} from 'fruitstore_lib'
 
 export class Routes {
     private fruitStoreApi: FruitStoreApi;
@@ -25,13 +25,13 @@ export class Routes {
         return command.match('pedir') || command.match('estado') || command.match('direccion')
     }
 
-    start(ctx:any, params: Array<string>) {
+    start(ctx:any) {
         let name = ctx.from?.first_name || ctx.from?.username;
         let message = MessageParser.buildStartMessage(name);
         ctx.telegram.sendMessage(ctx.message.chat.id, message);
     }
 
-    async products(ctx:any, params: Array<number>) {
+    async products(ctx:any) {
         var products = await this.fruitStoreApi.getProducts()
         var message = MessageParser.buildProductListMessage(products)
         ctx.telegram.sendMessage(ctx.message.chat.id, message, {parse_mode: 'markdown'});
@@ -49,13 +49,13 @@ export class Routes {
     }
 
     async status(ctx: any, orderId: string) {
-        let order: Order = await this.fruitStoreApi.getStatus(orderId);
+        let order: Pedido = await this.fruitStoreApi.getStatus(orderId);
         let message = MessageParser.buildOrderStatusMessage(order.estado);
         ctx.telegram.sendMessage(ctx.message.chat.id, message)
     }
 
     async address(ctx: any, address: string) {
-        let updatedOrder: Order = await this.fruitStoreApi.setAddress(ctx.from.username, address);
+        let updatedOrder: Pedido = await this.fruitStoreApi.setAddress(ctx.from.username, address);
         let message = MessageParser.buildAddressMessage(updatedOrder.id, updatedOrder.direccion)
         ctx.telegram.sendMessage(ctx.message.chat.id, message)
     }

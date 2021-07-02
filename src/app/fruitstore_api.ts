@@ -1,27 +1,8 @@
 const axios = require('axios')
-
-export interface IProduct {
-    id: number,
-    nombre: string,
-    descripcion: string,
-    precio: number
-}
-
-export interface IOrderInfo {
-    totalPrice: number,
-    orderId: number
-}
-export interface Order {
-    id: number,
-    precio: number
-    us_telegram: string,
-    estado: string,
-    productos: Array<IProduct>,
-    direccion: string
-}
+import {Pedido, Producto} from 'fruitstore_lib'
 
 interface IProductRequest {
-    producto_id: number,
+    id_producto: number,
     cantidad: number
 }
 
@@ -33,34 +14,34 @@ export class FruitStoreApi {
         this.apiUrl = String(process.env.BASE_API_URL);
     }
 
-    async getProducts(): Promise<IProduct[]> {
+    async getProducts(): Promise<Producto[]> {
         const response = await axios.get(`${this.apiUrl}/producto`)
-        const products:Array<IProduct> = await response.data
+        const products:Array<Producto> = await response.data
         return products;
     }
 
-    async sendOrder(products: Array<string>, telegramUser:string) {
+    async sendOrder(products: Array<string>, telegramUser:string): Promise<Pedido> {
         var productsRequest: Array<IProductRequest> = new Array();
 
         products.forEach( element => {
             let [id,qty] = element.split('-');
-            productsRequest.push({"producto_id": Number(id), "cantidad": Number(qty)})
+            productsRequest.push({"id_producto": Number(id), "cantidad": Number(qty)})
         })
         var request = {"productos": productsRequest, "us_telegram": telegramUser, "estado": "En progreso"}
         const response = await axios.post(`${this.apiUrl}/pedido`, request)
-        const order:Order = await response.data
-        return {"totalPrice": order.precio, "orderId": order.id}
-    }
-
-    async getStatus(orderId: string): Promise<Order> {
-        const response = await axios.get(`${this.apiUrl}/pedido/${orderId}`)
-        const order: Order = await response.data
+        const order:Pedido = await response.data
         return order;
     }
 
-    async setAddress(telegramUser: string, address: string): Promise<Order> {
+    async getStatus(orderId: string): Promise<Pedido> {
+        const response = await axios.get(`${this.apiUrl}/pedido/${orderId}`)
+        const order:Pedido = await response.data
+        return order;
+    }
+
+    async setAddress(telegramUser: string, address: string): Promise<Pedido> {
         const response = await axios.put(`${this.apiUrl}/pedido/telegram/${telegramUser}`, {"direccion": address})
-        const updatedOrder: Order = await response.data;
+        const updatedOrder:Pedido = await response.data;
         return updatedOrder;
     }
 }
