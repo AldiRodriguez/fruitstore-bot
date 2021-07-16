@@ -16,15 +16,15 @@ export module MessageParser {
             return "Tenes que enviar los codigos del producto para realizar el pedido.\nEjemplo /pedir 1,2,3 ";
         }
         return `El pedido fue registrado exitosamente en nuestro sistema!
-        Numero de pedido: ${orderInfo.id}
-        Precio total: $${orderInfo.precio}
+        *Numero de pedido*: ${orderInfo.id}
+        *Precio total*: $${orderInfo.precio}
         Es importante que nos indiques la dirección de entrega utilizando el comando /direccion
         Recorda que podes consultar el estado del mismo ingresando a /estado seguido del numero de pedido
         `;
     }
 
-    export function buildDefaultMessage(text: string): string {
-        return `El comando ${text} no es válido. Para ver los comandos disponibles ingresa /start`;
+    export function buildDefaultMessage(): string {
+        return `El comando ingresado no es válido. Para ver los comandos disponibles ingresa /start`;
     }
 
     export function buildProductListMessage(products: Array<Producto>) {

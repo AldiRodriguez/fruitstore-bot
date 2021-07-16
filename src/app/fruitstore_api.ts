@@ -20,7 +20,7 @@ export class FruitStoreApi {
         return products;
     }
 
-    async sendOrder(products: Array<string>, telegramUser:string): Promise<Pedido> {
+    async sendOrder(products: Array<string>, telegramUser:string|undefined): Promise<Pedido> {
         var productsRequest: Array<IProductRequest> = new Array();
 
         products.forEach( element => {
@@ -39,7 +39,7 @@ export class FruitStoreApi {
         return order;
     }
 
-    async setAddress(telegramUser: string, address: string): Promise<Pedido> {
+    async setAddress(telegramUser: string|undefined, address: string): Promise<Pedido> {
         const response = await axios.put(`${this.apiUrl}/pedido/telegram/${telegramUser}`, {"direccion": address})
         const updatedOrder:Pedido = await response.data;
         return updatedOrder;
